@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jafra Control</title>
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;Jafra Control&quot;,&quot;short_name&quot;:&quot;Jafra&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#1a1209&quot;,&quot;theme_color&quot;:&quot;#c9a84c&quot;}">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #f5f0e8;
+    --gold: #c9a84c;
+    --dark: #1a1209;
+    --brown: #6b4c1e;
+    --accent: #8b1a1a;
+    --surface: #fdf8f0;
+    --border: #e0d4bc;
+    --success: #2d6a4f;
+    --muted: #9a8a72;
+  }
+
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dark); min-height: 100vh; }
+
+  header {
+    background: var(--dark);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 2px solid var(--gold);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .logo { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+  .logo span { color: #aaa; font-weight: 300; font-size: 11px; display: block; letter-spacing: 3px; }
+
+  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+  .sync-status {
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid;
+    transition: all 0.3s;
+  }
+  .sync-status.ok { color: var(--success); border-color: var(--success); background: rgba(45,106,79,0.1); }
+  .sync-status.loading { color: var(--gold); border-color: var(--gold); background: rgba(201,168,76,0.1); }
+  .sync-status.error { color: var(--accent); border-color: var(--accent); background: rgba(139,26,26,0.1); }
+
+  nav { display: flex; gap: 4px; flex-wrap: wrap; }
+
+  nav button {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--muted);
+    padding: 7px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  nav button.active, nav button:hover { background: rgba(201,168,76,0.15); border-color: var(--gold); color: var(--gold); }
+
+  .content { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr !important; }
+    header { flex-direction: column; align-items: flex-start; }
+  }
+
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--gold); }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 6px; }
+  .stat-value { font-family: 'Playfair Display', serif; font-size: 24px; }
+  .stat-value.green { color: var(--success); }
+
+  .section-title { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 14px; color: var(--brown); display: flex; align-items: center; gap: 10px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px; }
+
+  .form-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; padding: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); }
+
+  input, select {
+    background: var(--cream); border: 1px solid var(--border); border-radius: 4px;
+    padding: 8px 10px; font-family: 'DM Sans', sans-serif; font-size: 13px;
+    color: var(--dark); outline: none; transition: border-color 0.2s; width: 100%;
+  }
+  input:focus, select:focus { border-color: var(--gold); }
+
+  .btn { padding: 9px 20px; border: none; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-size: 13px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+  .btn-gold { background: var(--gold); color: var(--dark); }
+  .btn-gold:hover { background: #b8973e; }
+  .btn-danger { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 5px 12px; font-size: 12px; }
+  .btn-danger:hover { background: var(--accent); color: white; }
+
+  .form-actions { padding: 0 16px 16px; display: flex; gap: 10px; align-items: center; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: rgba(201,168,76,0.08); }
+  th { padding: 10px 14px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid rgba(224,212,188,0.4); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(201,168,76,0.04); }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge-ok { background: rgba(45,106,79,0.12); color: var(--success); }
+  .badge-low { background: rgba(201,168,76,0.15); color: var(--brown); }
+  .badge-out { background: rgba(139,26,26,0.12); color: var(--accent); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+  .profit-pos { color: var(--success); font-weight: 500; }
+  .profit-neg { color: var(--accent); font-weight: 500; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--dark); color: var(--gold);
+    padding: 12px 20px; border-radius: 6px;
+    border: 1px solid var(--gold); font-size: 13px;
+    opacity: 0; transform: translateY(10px);
+    transition: all 0.3s; pointer-events: none; z-index: 999;
+    max-width: 280px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(26,18,9,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 500;
+    opacity: 0; pointer-events: none; transition: opacity 0.3s;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid rgba(201,168,76,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay"><div class="spinner"></div></div>
+
+<header>
+  <div class="logo">
+    Jafra Control
+    <span>Inventario & Ventas</span>
+  </div>
+  <div class="header-right">
+    <span class="sync-status loading" id="sync-status">⟳ Conectando...</span>
+    <button class="btn btn-gold" style="font-size:12px;padding:6px 14px" onclick="syncAll()">↻ Sincronizar</button>
+    <nav>
+      <button class="active" onclick="switchTab('inventario', this)">📦 Inventario</button>
+      <button onclick="switchTab('venta', this)">🛒 Venta</button>
+      <button onclick="switchTab('historial', this)">📋 Historial</button>
+      <button onclick="switchTab('resumen', this)">💰 Resumen</button>
+    </nav>
+  </div>
+</header>
+
+<div class="content">
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">Productos</div><div class="stat-value" id="stat-productos">—</div></div>
+    <div class="stat-card"><div class="stat-label">En stock</div><div class="stat-value" id="stat-unidades">—</div></div>
+    <div class="stat-card"><div class="stat-label">Total vendido</div><div class="stat-value green" id="stat-ventas">—</div></div>
+    <div class="stat-card"><div class="stat-label">Ganancia</div><div class="stat-value green" id="stat-ganancia">—</div></div>
+  </div>
+
+  <!-- INVENTARIO -->
+  <div class="tab-content active" id="tab-inventario">
+    <div class="section-title">Agregar producto</div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group"><label>Nombre</label><input type="text" id="inv-nombre" placeholder="Ej. Royal Oud"></div>
+        <div class="form-group"><label>Categoría</label>
+          <select id="inv-cat">
+            <option>Perfume Dama</option><option>Perfume Caballero</option>
+            <option>Perfume Unisex</option><option>Set / Colección</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Cantidad</label><input type="number" id="inv-qty" placeholder="0" min="0"></div>
+        <div class="form-group"><label>Costo ($)</label><input type="number" id="inv-costo" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Precio venta ($)</label><input type="number" id="inv-precio" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Notas</label><input type="text" id="inv-notas" placeholder="ml, fragancia..."></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-gold" onclick="agregarProducto()">+ Agregar</button>
+      </div>
+    </div>
+
+    <div class="section-title">Inventario actual</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Producto</th><th>Cat.</th><th>Stock</th><th>Costo</th><th>Venta</th><th>Margen</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="tbody-inv"><tr><td colspan="8" class="empty-state">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- VENTA -->
+  <div class="tab-content" id="tab-venta">
+    <div class="section-title">Nueva venta</div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="form-group"><label>Producto</label>
+          <select id="v-prod" onchange="onSelectProd()"><option value="">-- Selecciona --</option></select>
+        </div>
+        <div class="form-group"><label>Cantidad</label><input type="number" id="v-qty" value="1" min="1" oninput="calcTotal()"></div>
+        <div class="form-group"><label>Precio unitario ($)</label><input type="number" id="v-precio" placeholder="0.00" step="0.01" oninput="calcTotal()"></div>
+        <div class="form-group"><label>Cliente (opcional)</label><input type="text" id="v-cliente" placeholder="Nombre o referencia"></div>
+        <div class="form-group"><label>Total</label><input type="text" id="v-total" readonly style="color:var(--success);font-weight:600"></div>
+        <div class="form-group"><label>Fecha</label><input type="date" id="v-fecha"></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-gold" onclick="registrarVenta()">✓ Confirmar venta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="tab-content" id="tab-historial">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div class="section-title" style="margin-bottom:0;flex:1">Historial de ventas</div>
+      <button class="btn btn-danger" style="margin-left:16px" onclick="borrarHistorial()">🗑 Borrar historial</button>
+    </div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Fecha</th><th>Producto</th><th>Cant.</th><th>Precio</th><th>Total</th><th>Ganancia</th><th>Cliente</th></tr></thead>
+        <tbody id="tbody-hist"><tr><td colspan="7" class="empty-state">Sin ventas aún.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="tab-content" id="tab-resumen">
+    <div class="section-title">Resumen por producto</div>
+    <div class="card">
+      <table>
+        <thead><tr><th>Producto</th><th>Vendidas</th><th>Ingresos</th><th>Costo total</th><th>Ganancia neta</th></tr></thead>
+        <tbody id="tbody-res"><tr><td colspan="5" class="empty-state">Aquí verás tu resumen financiero.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // =============================================
+  // CONFIGURACIÓN — URL de tu Apps Script
+  // =============================================
+  const API = 'https://script.google.com/macros/s/AKfycbyMrrft6InrT0iKIpTVmojWxGY_UTQCa6LIbOjwponwQ6GUwCDsV8CAfbc38B2eN3wn/exec';
+
+  let inv = [];
+  let ventas = [];
+
+  document.getElementById('v-fecha').value = new Date().toISOString().split('T')[0];
+
+  // =============================================
+  // SYNC CON GOOGLE SHEETS
+  // =============================================
+
+  function setStatus(state, msg) {
+    const el = document.getElementById('sync-status');
+    el.className = 'sync-status ' + state;
+    el.textContent = msg;
+  }
+
+  function showLoader(show) {
+    document.getElementById('overlay').classList.toggle('show', show);
+  }
+
+  async function apiGet(action) {
+    const res = await fetch(`${API}?action=${action}`);
+    return res.json();
+  }
+
+  async function apiSet(action, data) {
+    const url = `${API}?action=${action}&data=${encodeURIComponent(JSON.stringify(data))}`;
+    const res = await fetch(url);
+    return res.json();
+  }
+
+  async function syncAll() {
+    setStatus('loading', '⟳ Sincronizando...');
+    showLoader(true);
+    try {
+      const [rawInv, rawVentas] = await Promise.all([
+        apiGet('getInventario'),
+        apiGet('getVentas')
+      ]);
+
+      inv = (Array.isArray(rawInv) ? rawInv : []).map(p => ({
+        id: Number(p.id) || Date.now(),
+        nombre: p.nombre || '',
+        cat: p.cat || '',
+        qty: Number(p.qty) || 0,
+        costo: Number(p.costo) || 0,
+        precio: Number(p.precio) || 0,
+        notas: p.notas || ''
+      }));
+
+      ventas = (Array.isArray(rawVentas) ? rawVentas : []).map(v => ({
+        fecha: v.fecha || '',
+        prodId: Number(v.prodId),
+        nombre: v.nombre || '',
+        qty: Number(v.qty) || 0,
+        precio: Number(v.precio) || 0,
+        total: Number(v.total) || 0,
+        costo: Number(v.costo) || 0,
+        ganancia: Number(v.ganancia) || 0,
+        cliente: v.cliente || ''
+      }));
+
+      renderInv();
+      renderHist();
+      renderRes();
+      updateStats();
+      setStatus('ok', '✓ Sincronizado');
+      toast('✓ Datos actualizados desde Google Sheets');
+    } catch (err) {
+      setStatus('error', '✗ Sin conexión');
+      toast('⚠ Error de conexión — revisa internet');
+    } finally {
+      showLoader(false);
+    }
+  }
+
+  async function pushInv() {
+    setStatus('loading', '⟳ Guardando...');
+    try {
+      await apiSet('setInventario', inv);
+      setStatus('ok', '✓ Guardado');
+    } catch {
+      setStatus('error', '✗ Error al guardar');
+    }
+  }
+
+  async function pushVentas() {
+    setStatus('loading', '⟳ Guardando...');
+    try {
+      await apiSet('setVentas', ventas);
+      setStatus('ok', '✓ Guardado');
+    } catch {
+      setStatus('error', '✗ Error al guardar');
+    }
+  }
+
+  // =============================================
+  // UI HELPERS
+  // =============================================
+
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3000);
+  }
+
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+    if (name === 'venta') fillSelect();
+    if (name === 'historial') renderHist();
+    if (name === 'resumen') renderRes();
+  }
+
+  function updateStats() {
+    document.getElementById('stat-productos').textContent = inv.length;
+    document.getElementById('stat-unidades').textContent = inv.reduce((s, p) => s + p.qty, 0);
+    document.getElementById('stat-ventas').textContent = '$' + ventas.reduce((s, v) => s + v.total, 0).toFixed(2);
+    document.getElementById('stat-ganancia').textContent = '$' + ventas.reduce((s, v) => s + v.ganancia, 0).toFixed(2);
+  }
+
+  // =============================================
+  // INVENTARIO
+  // =============================================
+
+  async function agregarProducto() {
+    const nombre = document.getElementById('inv-nombre').value.trim();
+    const cat = document.getElementById('inv-cat').value;
+    const qty = parseInt(document.getElementById('inv-qty').value) || 0;
+    const costo = parseFloat(document.getElementById('inv-costo').value) || 0;
+    const precio = parseFloat(document.getElementById('inv-precio').value) || 0;
+    const notas = document.getElementById('inv-notas').value.trim();
+
+    if (!nombre) return toast('⚠ Escribe el nombre del producto');
+    if (!precio) return toast('⚠ El precio de venta no puede ser $0');
+
+    inv.push({ id: Date.now(), nombre, cat, qty, costo, precio, notas });
+    renderInv();
+    updateStats();
+    toast('✓ Agregado — guardando en Sheets...');
+    ['inv-nombre','inv-qty','inv-costo','inv-precio','inv-notas'].forEach(id => document.getElementById(id).value = '');
+    await pushInv();
+  }
+
+  async function eliminar(id) {
+    if (!confirm('¿Eliminar este producto?')) return;
+    inv = inv.filter(p => p.id !== id);
+    renderInv();
+    updateStats();
+    toast('Producto eliminado');
+    await pushInv();
+  }
+
+  function renderInv() {
+    const tb = document.getElementById('tbody-inv');
+    if (!inv.length) { tb.innerHTML = '<tr><td colspan="8" class="empty-state">Agrega tu primer producto ↑</td></tr>'; return; }
+    tb.innerHTML = inv.map(p => {
+      const margen = p.costo > 0 ? (((p.precio - p.costo) / p.costo) * 100).toFixed(0) + '%' : '—';
+      const [cls, lbl] = p.qty === 0 ? ['badge-out','Agotado'] : p.qty <= 2 ? ['badge-low','Poco stock'] : ['badge-ok','Disponible'];
+      return `<tr>
+        <td><strong>${p.nombre}</strong>${p.notas ? `<br><span style="color:var(--muted);font-size:11px">${p.notas}</span>` : ''}</td>
+        <td>${p.cat}</td><td><strong>${p.qty}</strong></td>
+        <td>$${Number(p.costo).toFixed(2)}</td><td>$${Number(p.precio).toFixed(2)}</td>
+        <td>${margen}</td>
+        <td><span class="badge ${cls}">${lbl}</span></td>
+        <td><button class="btn btn-danger" onclick="eliminar(${p.id})">✕</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // =============================================
+  // VENTAS
+  // =============================================
+
+  function fillSelect() {
+    const sel = document.getElementById('v-prod');
+    sel.innerHTML = '<option value="">-- Selecciona --</option>' +
+      inv.filter(p => p.qty > 0).map(p => `<option value="${p.id}">${p.nombre} (${p.qty} disp.)</option>`).join('');
+  }
+
+  function onSelectProd() {
+    const p = inv.find(x => x.id === parseInt(document.getElementById('v-prod').value));
+    if (p) { document.getElementById('v-precio').value = Number(p.precio).toFixed(2); calcTotal(); }
+  }
+
+  function calcTotal() {
+    const qty = parseInt(document.getElementById('v-qty').value) || 0;
+    const pr = parseFloat(document.getElementById('v-precio').value) || 0;
+    document.getElementById('v-total').value = '$' + (qty * pr).toFixed(2);
+  }
+
+  async function registrarVenta() {
+    const prodId = parseInt(document.getElementById('v-prod').value);
+    const qty = parseInt(document.getElementById('v-qty').value) || 0;
+    const precio = parseFloat(document.getElementById('v-precio').value) || 0;
+    const cliente = document.getElementById('v-cliente').value.trim();
+    const fecha = document.getElementById('v-fecha').value;
+
+    if (!prodId) return toast('⚠ Selecciona un producto');
+    if (qty < 1) return toast('⚠ La cantidad debe ser mínimo 1');
+    if (!precio) return toast('⚠ Ingresa el precio de venta');
+
+    const prod = inv.find(p => p.id === prodId);
+    if (!prod) return toast('Producto no encontrado');
+    if (prod.qty < qty) return toast(`⚠ Solo hay ${prod.qty} unidades en stock`);
+
+    prod.qty -= qty;
+    const ganancia = (precio - prod.costo) * qty;
+    ventas.push({ fecha, prodId, nombre: prod.nombre, qty, precio, total: precio * qty, costo: prod.costo, ganancia, cliente });
+
+    renderInv();
+    updateStats();
+    toast('✓ Venta registrada — guardando...');
+    ['v-cliente','v-total','v-precio'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('v-prod').value = '';
+    document.getElementById('v-qty').value = 1;
+
+    await Promise.all([pushInv(), pushVentas()]);
+  }
+
+  function renderHist() {
+    const tb = document.getElementById('tbody-hist');
+    if (!ventas.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">Sin ventas aún.</td></tr>'; return; }
+    tb.innerHTML = [...ventas].reverse().map(v => `<tr>
+      <td>${v.fecha}</td><td>${v.nombre}</td><td>${v.qty}</td>
+      <td>$${Number(v.precio).toFixed(2)}</td><td><strong>$${Number(v.total).toFixed(2)}</strong></td>
+      <td class="${v.ganancia >= 0 ? 'profit-pos' : 'profit-neg'}">$${Number(v.ganancia).toFixed(2)}</td>
+      <td>${v.cliente || '—'}</td>
+    </tr>`).join('');
+  }
+
+  async function borrarHistorial() {
+    if (!ventas.length) return toast('Ya no hay historial');
+    if (!confirm('¿Borrar todo el historial de ventas? El inventario no se toca.')) return;
+    ventas = [];
+    renderHist();
+    updateStats();
+    toast('🗑 Historial borrado');
+    await pushVentas();
+  }
+
+  function renderRes() {
+    const tb = document.getElementById('tbody-res');
+    if (!ventas.length) { tb.innerHTML = '<tr><td colspan="5" class="empty-state">Aquí verás tu resumen financiero.</td></tr>'; return; }
+    const map = {};
+    ventas.forEach(v => {
+      if (!map[v.nombre]) map[v.nombre] = { u: 0, ing: 0, cos: 0, gan: 0 };
+      map[v.nombre].u += v.qty;
+      map[v.nombre].ing += v.total;
+      map[v.nombre].cos += v.costo * v.qty;
+      map[v.nombre].gan += v.ganancia;
+    });
+    tb.innerHTML = Object.entries(map).sort((a,b) => b[1].gan - a[1].gan).map(([n, d]) => `<tr>
+      <td>${n}</td><td>${d.u}</td><td>$${d.ing.toFixed(2)}</td><td>$${d.cos.toFixed(2)}</td>
+      <td class="${d.gan >= 0 ? 'profit-pos' : 'profit-neg'}">$${d.gan.toFixed(2)}</td>
+    </tr>`).join('');
+  }
+
+  // Arrancar
+  syncAll();
+</script>
+</body>
+</html>
